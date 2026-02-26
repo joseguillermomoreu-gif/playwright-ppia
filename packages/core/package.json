@@ -1,0 +1,25 @@
+{
+  "name": "playwright-ppia",
+  "version": "0.1.0",
+  "description": "AI-powered test generation framework for Playwright",
+  "bin": {
+    "ppia": "./dist/cli/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/",
+    "python/"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "playwright",
+    "testing",
+    "ai",
+    "e2e",
+    "test-generation"
+  ],
+  "license": "MIT"
+}
