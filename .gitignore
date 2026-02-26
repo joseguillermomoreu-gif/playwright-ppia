@@ -61,6 +61,10 @@ Thumbs.db
 logs/
 npm-debug.log*
 
+# ─── Claude Code (local) ─────────────────────────────────────────────────────
+CLAUDE.md
+.claude/
+
 # ─── Output del framework ─────────────────────────────────────────────────────
 output/
 .ppia/
