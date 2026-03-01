@@ -1,0 +1,34 @@
+[project]
+name = "ppia-ai-service"
+version = "0.1.0"
+description = "AI Service for playwright-ppia framework"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "openai>=1.50.0",
+    "anthropic>=0.37.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "mypy>=1.11.0",
+    "ruff>=0.7.0",
+]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
