@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import json
-import logging
-
 from src.application.dto.prepare_input import PrepareInputRequest, PrepareInputResponse
+from src.application.shared.llm_response_parser import parse_llm_json
 from src.domain.repository.llm_service import LlmService
 from src.infrastructure.prompts.prepare_input_prompt import (
     PREPARE_INPUT_SYSTEM_PROMPT,
     build_prepare_input_prompt,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class PrepareInputUseCase:
@@ -25,7 +21,7 @@ class PrepareInputUseCase:
         )
 
         tokens_used = await self._llm_service.count_tokens(request.raw_input)
-        parsed = self._parse_llm_response(raw_response)
+        parsed = parse_llm_json(raw_response, context="prepare-input")
 
         return PrepareInputResponse(
             url=str(parsed.get("url", "")),
@@ -40,17 +36,3 @@ class PrepareInputUseCase:
         if isinstance(raw, dict):
             return {str(k): str(v) for k, v in raw.items()}
         return {}
-
-    @staticmethod
-    def _parse_llm_response(raw: str) -> dict[str, object]:
-        cleaned = raw.strip()
-        if cleaned.startswith("```"):
-            lines = cleaned.split("\n")
-            cleaned = "\n".join(lines[1:-1])
-
-        try:
-            result: dict[str, object] = json.loads(cleaned)
-            return result
-        except json.JSONDecodeError:
-            logger.error("Failed to parse LLM response as JSON: %s", cleaned[:200])
-            return {}
