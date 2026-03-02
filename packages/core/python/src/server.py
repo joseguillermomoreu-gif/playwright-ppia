@@ -1,6 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
+from src.application.dto.explore import (
+    CloseSessionResponse,
+    CreateSessionResponse,
+    ExploreRequest,
+    ExploreResponse,
+)
 from src.application.dto.prepare_input import PrepareInputRequest, PrepareInputResponse
+from src.application.use_cases.explore.explore_use_case import ExploreUseCase
 from src.application.use_cases.prepare_input.prepare_input_use_case import PrepareInputUseCase
 from src.infrastructure.config.dependency_injection import get_container
 
@@ -18,3 +25,30 @@ async def prepare_input(request: PrepareInputRequest) -> PrepareInputResponse:
     llm_service = container.get_llm_service(model_override=request.model)
     use_case = PrepareInputUseCase(llm_service)
     return await use_case.execute(request)
+
+
+@app.post("/session")
+async def create_session() -> CreateSessionResponse:
+    container = get_container()
+    session = container.get_session_store().create()
+    return CreateSessionResponse(session_id=session.id)
+
+
+@app.delete("/session/{session_id}")
+async def close_session(session_id: str) -> CloseSessionResponse:
+    container = get_container()
+    closed = container.get_session_store().close(session_id)
+    if not closed:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return CloseSessionResponse(closed=True)
+
+
+@app.post("/session/{session_id}/explore")
+async def explore(session_id: str, request: ExploreRequest) -> ExploreResponse:
+    container = get_container()
+    session = container.get_session_store().get(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    llm_service = container.get_llm_service(model_override=request.model)
+    use_case = ExploreUseCase(llm_service)
+    return await use_case.execute(session, request.html, request.context)
