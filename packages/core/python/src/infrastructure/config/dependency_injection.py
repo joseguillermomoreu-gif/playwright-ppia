@@ -2,12 +2,19 @@ from src.domain.repository.llm_service import LlmService
 from src.infrastructure.ai.anthropic.claude_llm_service import ClaudeLlmService
 from src.infrastructure.ai.openai.openai_llm_service import OpenAiLlmService
 from src.infrastructure.config.settings import Settings, get_settings
+from src.infrastructure.session.session_store import SessionStore
 
 
 class Container:
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or get_settings()
         self._llm_service: LlmService | None = None
+        self._session_store: SessionStore | None = None
+
+    def get_session_store(self) -> SessionStore:
+        if self._session_store is None:
+            self._session_store = SessionStore()
+        return self._session_store
 
     def get_llm_service(self, model_override: str = "") -> LlmService:
         if not model_override or model_override == self.settings.default_model:
