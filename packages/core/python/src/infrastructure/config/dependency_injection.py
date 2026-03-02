@@ -9,10 +9,13 @@ class Container:
         self.settings = settings or get_settings()
         self._llm_service: LlmService | None = None
 
-    def get_llm_service(self) -> LlmService:
-        if self._llm_service is None:
-            self._llm_service = _create_llm_service(self.settings)
-        return self._llm_service
+    def get_llm_service(self, model_override: str = "") -> LlmService:
+        if not model_override or model_override == self.settings.default_model:
+            if self._llm_service is None:
+                self._llm_service = _create_llm_service(self.settings)
+            return self._llm_service
+        override_settings = self.settings.model_copy(update={"default_model": model_override})
+        return _create_llm_service(override_settings)
 
 
 def _create_llm_service(settings: Settings) -> LlmService:
