@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-import json
-import logging
-
 from src.application.dto.generate import GenerateArtifactsResponse
+from src.application.shared.llm_response_parser import parse_llm_json
 from src.domain.model.session import Session
 from src.domain.repository.llm_service import LlmService
 from src.infrastructure.prompts.artifacts_prompt import (
     ARTIFACTS_SYSTEM_PROMPT,
     build_artifacts_prompt,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class GenerateArtifactsUseCase:
@@ -29,7 +25,7 @@ class GenerateArtifactsUseCase:
 
         session.add_message("assistant", raw_response)
         tokens_used = await self._llm_service.count_tokens(prompt)
-        parsed = self._parse_response(raw_response)
+        parsed = parse_llm_json(raw_response, context="artifacts")
 
         return GenerateArtifactsResponse(
             pom_md=str(parsed.get("pom_md", "")),
@@ -37,16 +33,3 @@ class GenerateArtifactsUseCase:
             cucumber_md=str(parsed.get("cucumber_md", "")),
             tokens_used=tokens_used,
         )
-
-    @staticmethod
-    def _parse_response(raw: str) -> dict[str, object]:
-        cleaned = raw.strip()
-        if cleaned.startswith("```"):
-            lines = cleaned.split("\n")
-            cleaned = "\n".join(lines[1:-1])
-        try:
-            result: dict[str, object] = json.loads(cleaned)
-            return result
-        except json.JSONDecodeError:
-            logger.error("Failed to parse artifacts response as JSON: %s", cleaned[:200])
-            return {}
