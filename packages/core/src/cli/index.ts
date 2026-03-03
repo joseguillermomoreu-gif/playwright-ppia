@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 
+import { registerGenerateCommand } from './commands/generate.js';
 import { createSetupCommand } from './commands/setup.js';
 
 const program = new Command();
@@ -11,6 +12,7 @@ program
   .description('AI-powered test generation for Playwright')
   .version('0.1.0');
 
+registerGenerateCommand(program);
 program.addCommand(createSetupCommand());
 
 program.parseAsync().catch((err: unknown) => {
