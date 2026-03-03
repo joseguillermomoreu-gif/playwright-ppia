@@ -58,6 +58,12 @@ export class SetupManager {
   }
 
   private async authenticateViaLoginForm(setup: ResolvedSetup): Promise<void> {
+    const selectors = setup.user.loginSelectors ?? {
+      email: 'getByLabel("Email")',
+      password: 'getByLabel("Password")',
+      submit: 'getByRole("button", { name: "Submit" })',
+    };
+
     await this.actionExecutor.execute({
       action: 'navigate',
       target: setup.environment.baseUrl,
@@ -65,17 +71,17 @@ export class SetupManager {
     });
     await this.actionExecutor.execute({
       action: 'fill',
-      target: 'getByLabel("Email")',
+      target: selectors.email,
       value: setup.user.email ?? '',
     });
     await this.actionExecutor.execute({
       action: 'fill',
-      target: 'getByLabel("Password")',
+      target: selectors.password,
       value: setup.user.password ?? '',
     });
     await this.actionExecutor.execute({
       action: 'click',
-      target: 'getByRole("button", { name: "Submit" })',
+      target: selectors.submit,
       value: null,
     });
   }

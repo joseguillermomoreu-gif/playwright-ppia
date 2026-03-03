@@ -12,12 +12,19 @@ export interface EnvironmentConfig {
 
 export type AuthFlow = 'login_form' | 'cookie_injection';
 
+export interface LoginSelectors {
+  email: string;
+  password: string;
+  submit: string;
+}
+
 export interface UserConfig {
   name: string;
   email?: string;
   password?: string;
   role?: string;
   authFlow: AuthFlow;
+  loginSelectors?: LoginSelectors;
 }
 
 export interface SetupCombination {
@@ -56,6 +63,7 @@ interface RawUser {
   password?: unknown;
   role?: unknown;
   auth_flow?: unknown;
+  login_selectors?: unknown;
 }
 
 interface RawCombination {
@@ -110,6 +118,17 @@ function parseEnvironment(raw: RawEnvironment, index: number): EnvironmentConfig
   };
 }
 
+function parseLoginSelectors(raw: unknown): LoginSelectors | undefined {
+  if (!raw || typeof raw !== 'object') {
+    return undefined;
+  }
+  const obj = raw as Record<string, unknown>;
+  if (typeof obj.email !== 'string' || typeof obj.password !== 'string' || typeof obj.submit !== 'string') {
+    return undefined;
+  }
+  return { email: obj.email, password: obj.password, submit: obj.submit };
+}
+
 function parseUser(raw: RawUser, index: number): UserConfig {
   if (typeof raw.name !== 'string' || raw.name.length === 0) {
     throw new ProjectConfigError(
@@ -123,13 +142,18 @@ function parseUser(raw: RawUser, index: number): UserConfig {
       `users[${String(index)}].auth_flow`,
     );
   }
-  return {
+  const user: UserConfig = {
     name: raw.name,
     email: resolveOptionalString(raw.email),
     password: resolveOptionalString(raw.password),
     role: typeof raw.role === 'string' ? raw.role : undefined,
     authFlow: raw.auth_flow as AuthFlow,
   };
+  const loginSelectors = parseLoginSelectors(raw.login_selectors);
+  if (loginSelectors) {
+    user.loginSelectors = loginSelectors;
+  }
+  return user;
 }
 
 function parseCombination(
