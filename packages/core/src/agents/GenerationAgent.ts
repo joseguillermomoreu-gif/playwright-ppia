@@ -4,13 +4,24 @@ import type { AgentContext } from '../domain/AgentContext.js';
 import type { GenerationResult } from '../domain/GenerationResult.js';
 import type { TestExecutor } from '../executor/TestExecutor.js';
 
+export interface GenerationProgressEvent {
+  phase: 'test_generated' | 'test_passed' | 'test_failed' | 'artifacts_generated';
+  attempt: number;
+  tokensUsed: number;
+}
+
+export type GenerationProgressCallback = (event: GenerationProgressEvent) => void;
+
 export class GenerationAgent {
   constructor(
     private readonly aiClient: AiServiceClient,
     private readonly testExecutor: TestExecutor,
   ) {}
 
-  async run(context: AgentContext): Promise<GenerationResult> {
+  async run(
+    context: AgentContext,
+    onProgress?: GenerationProgressCallback,
+  ): Promise<GenerationResult> {
     if (!context.explorationReport) {
       throw new Error('GenerationAgent requires an explorationReport in context');
     }
@@ -37,14 +48,18 @@ export class GenerationAgent {
 
         const testResponse = await this.aiClient.generateTest(sessionId, request);
         totalTokensUsed += testResponse.tokensUsed;
+        onProgress?.({ phase: 'test_generated', attempt, tokensUsed: testResponse.tokensUsed });
 
         const result = await this.testExecutor.execute(testResponse.code, context.testName);
 
         if (result.passed) {
+          onProgress?.({ phase: 'test_passed', attempt, tokensUsed: 0 });
+
           const artifactsResponse = await this.aiClient.generateArtifacts(sessionId, {
             model: context.modelStrong,
           });
           totalTokensUsed += artifactsResponse.tokensUsed;
+          onProgress?.({ phase: 'artifacts_generated', attempt, tokensUsed: artifactsResponse.tokensUsed });
 
           return {
             generatedTest: {
@@ -63,6 +78,7 @@ export class GenerationAgent {
           };
         }
 
+        onProgress?.({ phase: 'test_failed', attempt, tokensUsed: 0 });
         lastFailedCode = testResponse.code;
         lastError = result.errorMessage ?? 'Test failed with unknown error';
       } finally {

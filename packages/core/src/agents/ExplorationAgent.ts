@@ -9,6 +9,8 @@ import type {
 } from '../domain/ExplorationReport.js';
 import type { Page } from 'playwright';
 
+export type ExplorationProgressCallback = (round: ExplorationRound) => void;
+
 export class ExplorationAgent {
   constructor(
     private readonly aiClient: AiServiceClient,
@@ -17,7 +19,10 @@ export class ExplorationAgent {
     private readonly page: Page,
   ) {}
 
-  async run(context: AgentContext): Promise<ExplorationReport> {
+  async run(
+    context: AgentContext,
+    onProgress?: ExplorationProgressCallback,
+  ): Promise<ExplorationReport> {
     const { sessionId } = await this.aiClient.createSession();
     const rounds: ExplorationRound[] = [];
     let completed = false;
@@ -58,6 +63,7 @@ export class ExplorationAgent {
         if (response.completed) {
           completed = true;
           rounds.push(round);
+          onProgress?.(round);
           break;
         }
 
@@ -76,6 +82,7 @@ export class ExplorationAgent {
         }
 
         rounds.push(round);
+        onProgress?.(round);
       }
 
       if (!completed) {
