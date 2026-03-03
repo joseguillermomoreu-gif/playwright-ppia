@@ -1,3 +1,4 @@
+import type { EnvironmentConfig, UserConfig } from '../config/ProjectConfig.js';
 import type { ExplorationReport } from './ExplorationReport.js';
 
 export interface GeneratedTest {
@@ -30,6 +31,10 @@ export interface AgentContext {
   modelStrong: string;
   maxIterations: number;
   maxGenerationAttempts: number;
+  setup?: {
+    environment: EnvironmentConfig;
+    user: UserConfig;
+  };
   explorationReport?: ExplorationReport;
   generatedTest?: GeneratedTest;
   generatedArtifacts?: GeneratedArtifacts;
