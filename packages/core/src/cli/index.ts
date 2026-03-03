@@ -2,8 +2,11 @@
 
 import { Command } from 'commander';
 
+import { createConfigCommand } from './commands/config-cmd.js';
 import { registerGenerateCommand } from './commands/generate.js';
+import { createKnowledgeCommand } from './commands/knowledge.js';
 import { createSetupCommand } from './commands/setup.js';
+import { createSuiteCommand } from './commands/suite-cmd.js';
 
 const program = new Command();
 
@@ -14,6 +17,9 @@ program
 
 registerGenerateCommand(program);
 program.addCommand(createSetupCommand());
+program.addCommand(createKnowledgeCommand());
+program.addCommand(createSuiteCommand());
+program.addCommand(createConfigCommand());
 
 program.parseAsync().catch((err: unknown) => {
   const message = err instanceof Error ? err.message : String(err);

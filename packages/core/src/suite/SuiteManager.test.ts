@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
@@ -6,6 +6,7 @@ vi.mock('node:fs/promises', () => ({
   mkdir: vi.fn(),
   readdir: vi.fn(),
   readFile: vi.fn(),
+  rm: vi.fn(),
   writeFile: vi.fn(),
 }));
 
@@ -15,6 +16,7 @@ import { SuiteManager } from './SuiteManager.js';
 const mockMkdir = mkdir as unknown as ReturnType<typeof vi.fn>;
 const mockReaddir = readdir as unknown as ReturnType<typeof vi.fn>;
 const mockReadFile = readFile as unknown as ReturnType<typeof vi.fn>;
+const mockRm = rm as unknown as ReturnType<typeof vi.fn>;
 const mockWriteFile = writeFile as unknown as ReturnType<typeof vi.fn>;
 
 function createEntry(overrides: Partial<SuiteEntry> = {}): SuiteEntry {
@@ -161,6 +163,48 @@ describe('SuiteManager', () => {
       const result = await manager.getVersions('nonexistent');
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('clean', () => {
+    it('removes tests older than the specified number of days', async () => {
+      const oldDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+      const recentDate = new Date().toISOString();
+      const oldEntry = createEntry({ testName: 'old-test', createdAt: oldDate });
+      const recentEntry = createEntry({ testName: 'recent-test', createdAt: recentDate });
+
+      mockReaddir.mockResolvedValueOnce(['old-test', 'recent-test']);
+      mockReadFile
+        .mockResolvedValueOnce(JSON.stringify(oldEntry))
+        .mockResolvedValueOnce(JSON.stringify(recentEntry));
+
+      const removed = await manager.clean(30);
+
+      expect(removed).toBe(1);
+      expect(mockRm).toHaveBeenCalledTimes(1);
+      expect(mockRm).toHaveBeenCalledWith(
+        join(baseDir, '.ppia', 'suite', 'old-test'),
+        { recursive: true, force: true },
+      );
+    });
+
+    it('returns 0 when no tests are older than threshold', async () => {
+      const recentEntry = createEntry({ createdAt: new Date().toISOString() });
+      mockReaddir.mockResolvedValueOnce(['recent-test']);
+      mockReadFile.mockResolvedValueOnce(JSON.stringify(recentEntry));
+
+      const removed = await manager.clean(30);
+
+      expect(removed).toBe(0);
+      expect(mockRm).not.toHaveBeenCalled();
+    });
+
+    it('returns 0 when suite directory does not exist', async () => {
+      mockReaddir.mockRejectedValueOnce(new Error('ENOENT'));
+
+      const removed = await manager.clean(30);
+
+      expect(removed).toBe(0);
     });
   });
 });
