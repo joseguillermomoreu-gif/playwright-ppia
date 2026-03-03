@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { SuiteEntry } from './SuiteEntry.js';
@@ -53,6 +53,33 @@ export class SuiteManager {
   async getVersions(testName: string): Promise<SuiteEntry[]> {
     const historyPath = join(this.suiteDir, testName, 'history.json');
     return this.readHistory(historyPath);
+  }
+
+  async clean(olderThanDays: number): Promise<number> {
+    const cutoff = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
+    let removed = 0;
+
+    let dirNames: string[];
+    try {
+      dirNames = await readdir(this.suiteDir);
+    } catch {
+      return 0;
+    }
+
+    for (const name of dirNames) {
+      const latest = await this.readLatest(name);
+      if (!latest) {
+        continue;
+      }
+
+      const createdMs = new Date(latest.createdAt).getTime();
+      if (createdMs < cutoff) {
+        await rm(join(this.suiteDir, name), { recursive: true, force: true });
+        removed++;
+      }
+    }
+
+    return removed;
   }
 
   // ── Private helpers ──────────────────────────────────────────────────
