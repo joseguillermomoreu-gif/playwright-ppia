@@ -10,3 +10,4 @@ export type {
   ExplorationRound,
   LearnedSelector,
 } from './ExplorationReport.js';
+export type { GenerationResult } from './GenerationResult.js';

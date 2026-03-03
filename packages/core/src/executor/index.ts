@@ -1,1 +1,2 @@
-// Executor: runs generated tests via Playwright test runner.
+export { TestExecutor } from './TestExecutor.js';
+export type { ExecutionResult } from './TestExecutor.js';
