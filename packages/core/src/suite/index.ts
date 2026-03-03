@@ -1,1 +1,4 @@
-// Suite: test suite management, history and knowledge base client.
+export { KnowledgeBase } from './KnowledgeBase.js';
+export type { KnowledgeEntry, ResetOptions } from './KnowledgeEntry.js';
+export { SuiteManager } from './SuiteManager.js';
+export type { SuiteEntry, SuiteEntryArtifacts, SuiteEntryMetrics } from './SuiteEntry.js';
