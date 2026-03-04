@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 
@@ -15,6 +16,7 @@ import { loadProjectConfig } from '../../config/ProjectConfig.js';
 import { SetupManager } from '../../config/SetupManager.js';
 import { createAgentContext } from '../../domain/AgentContext.js';
 import { TestExecutor } from '../../executor/TestExecutor.js';
+import { SuiteManager } from '../../suite/SuiteManager.js';
 import * as ui from '../ui/ProgressDisplay.js';
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -38,18 +40,6 @@ async function writeArtifacts(
   await writeFile(join(dir, `${testName}.cucumber.md`), artifacts.cucumberMd, 'utf-8');
 }
 
-async function writeMetrics(
-  outputDir: string,
-  testName: string,
-  metrics: Record<string, unknown>,
-): Promise<void> {
-  await mkdir(outputDir, { recursive: true });
-  await writeFile(
-    join(outputDir, `${testName}.metrics.json`),
-    JSON.stringify(metrics, null, 2),
-    'utf-8',
-  );
-}
 
 // ── Main action ───────────────────────────────────────────────────────
 
@@ -159,15 +149,27 @@ async function generateAction(description: string, options: GenerateOptions): Pr
     const testPath = genResult.generatedTest.filePath ?? join(outputDir, `${prepared.testName}.spec.ts`);
     await writeArtifacts(testPath, prepared.testName, genResult.generatedArtifacts);
 
-    // ── 9. Write metrics ──────────────────────────────────────────────
-    await writeMetrics(outputDir, prepared.testName, {
-      totalTokens,
-      totalCost,
-      modelFast,
-      modelStrong,
-      explorationRounds: explorationReport.totalRounds,
-      generationAttempts: genResult.attempts,
-      timestamp: new Date().toISOString(),
+    // ── 9. Save to suite ──────────────────────────────────────────────
+    const suiteManager = new SuiteManager(process.cwd());
+    await suiteManager.save({
+      id: randomUUID(),
+      testName: prepared.testName,
+      description: prepared.objective,
+      url: prepared.url,
+      testCode: genResult.generatedTest.code,
+      testFilePath: testPath,
+      artifacts: genResult.generatedArtifacts,
+      metrics: {
+        totalTokensUsed: totalTokens,
+        totalCost,
+        modelFast,
+        modelStrong,
+        explorationRounds: explorationReport.totalRounds,
+        generationAttempts: genResult.attempts,
+        timestamp: new Date().toISOString(),
+      },
+      version: 1,
+      createdAt: new Date().toISOString(),
     });
 
     // ── 10. Summary ───────────────────────────────────────────────────
