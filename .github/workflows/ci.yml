@@ -24,7 +24,9 @@ jobs:
         with:
           node-version: 20
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: .
 
       - name: Lint
         run: pnpm lint
