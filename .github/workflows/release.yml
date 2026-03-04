@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Bump version & tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "last_tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
+
+          COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
+
+          BUMP="patch"
+          if echo "$COMMITS" | grep -qE "^feat(\(.+\))?!:|^BREAKING CHANGE:"; then
+            BUMP="major"
+          elif echo "$COMMITS" | grep -qE "^feat(\(.+\))?:"; then
+            BUMP="minor"
+          fi
+
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version in package.json
+        id: version
+        working-directory: packages/core
+        run: |
+          NEW_VERSION=$(npm version "${{ steps.bump.outputs.bump }}" --no-git-tag-version)
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and tag
+        run: |
+          git add packages/core/package.json
+          git commit -m "chore(release): ${{ steps.version.outputs.new_version }}"
+          git tag "${{ steps.version.outputs.new_version }}"
+          git push origin master --follow-tags
+
+      - name: Publish npm (placeholder)
+        run: |
+          echo "npm publish will be enabled in T22"
+          echo "Version: ${{ steps.version.outputs.new_version }}"
