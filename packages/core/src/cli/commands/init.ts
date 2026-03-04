@@ -63,16 +63,13 @@ function generateYaml(
   projectName: string,
   exploration: ModelChoice,
   generation: ModelChoice,
-  baseUrl?: string,
+  baseUrl: string,
 ): string {
   let yaml = `project:\n  name: ${projectName}\n\n`;
   yaml += `ai:\n`;
   yaml += `  exploration:\n    provider: ${exploration.provider}\n    model: ${exploration.model}\n`;
   yaml += `  generation:\n    provider: ${generation.provider}\n    model: ${generation.model}\n`;
-
-  if (baseUrl) {
-    yaml += `\nenvironments:\n  - name: default\n    base_url: ${baseUrl}\n`;
-  }
+  yaml += `\nenvironments:\n  - name: default\n    base_url: ${baseUrl}\n`;
 
   return yaml;
 }
@@ -173,11 +170,12 @@ async function initAction(): Promise<void> {
     }
   }
 
-  // Detect baseURL
-  const baseUrl = await detectBaseUrl(cwd);
-  if (baseUrl) {
-    ui.info(`Detected baseURL from playwright.config.ts: ${baseUrl}`);
-  }
+  // Base URL
+  const detectedBaseUrl = await detectBaseUrl(cwd);
+  const baseUrl = await input({
+    message: 'Base URL for the project:',
+    default: detectedBaseUrl ?? 'https://example.com',
+  });
 
   // Write files
   const yamlContent = generateYaml(projectName, exploration, generation, baseUrl);
