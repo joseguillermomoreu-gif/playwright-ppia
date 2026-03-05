@@ -17,6 +17,7 @@ export interface PrepareInputResponse {
   objective: string;
   testName: string;
   parameters: Record<string, string>;
+  detectedUser?: string;
   tokensUsed: number;
 }
 

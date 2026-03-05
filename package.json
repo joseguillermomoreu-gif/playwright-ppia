@@ -3,5 +3,14 @@
   "private": true,
   "version": "0.1.0",
   "description": "Monorepo for playwright-ppia framework",
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-push": "export NVM_DIR=\"$HOME/.nvm\" && . \"$NVM_DIR/nvm.sh\" && nvm use 20 --silent && cd packages/core && pnpm lint && pnpm typecheck && pnpm test && cd python && . .venv/bin/activate && ruff check src && mypy --strict src && pytest"
+  },
+  "devDependencies": {
+    "simple-git-hooks": "^2.13.1"
+  }
 }

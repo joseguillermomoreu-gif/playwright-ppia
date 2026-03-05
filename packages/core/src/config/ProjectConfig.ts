@@ -12,12 +12,19 @@ export interface EnvironmentConfig {
 
 export type AuthFlow = 'login_form' | 'cookie_injection';
 
+export interface LoginSelectors {
+  email: string;
+  password: string;
+  submit: string;
+}
+
 export interface UserConfig {
   name: string;
   email?: string;
   password?: string;
   role?: string;
   authFlow: AuthFlow;
+  loginSelectors?: LoginSelectors;
 }
 
 export interface SetupCombination {
@@ -25,8 +32,26 @@ export interface SetupCombination {
   users: string[];
 }
 
+export type AiProvider = 'openai' | 'anthropic';
+
+export interface AiModelConfig {
+  provider: AiProvider;
+  model: string;
+}
+
+export interface AiConfig {
+  exploration: AiModelConfig;
+  generation: AiModelConfig;
+}
+
+export const DEFAULT_AI_CONFIG: AiConfig = {
+  exploration: { provider: 'openai', model: 'gpt-4o-mini' },
+  generation: { provider: 'openai', model: 'gpt-4o' },
+};
+
 export interface ProjectConfig {
   projectName: string;
+  ai: AiConfig;
   environments: EnvironmentConfig[];
   users: UserConfig[];
   setupCombinations: SetupCombination[];
@@ -56,6 +81,7 @@ interface RawUser {
   password?: unknown;
   role?: unknown;
   auth_flow?: unknown;
+  login_selectors?: unknown;
 }
 
 interface RawCombination {
@@ -63,8 +89,19 @@ interface RawCombination {
   users?: unknown;
 }
 
+interface RawAiModelConfig {
+  provider?: unknown;
+  model?: unknown;
+}
+
+interface RawAiConfig {
+  exploration?: unknown;
+  generation?: unknown;
+}
+
 interface RawConfig {
   project?: { name?: unknown };
+  ai?: unknown;
   environments?: unknown[];
   users?: unknown[];
   setup_combinations?: unknown[];
@@ -110,6 +147,17 @@ function parseEnvironment(raw: RawEnvironment, index: number): EnvironmentConfig
   };
 }
 
+function parseLoginSelectors(raw: unknown): LoginSelectors | undefined {
+  if (!raw || typeof raw !== 'object') {
+    return undefined;
+  }
+  const obj = raw as Record<string, unknown>;
+  if (typeof obj.email !== 'string' || typeof obj.password !== 'string' || typeof obj.submit !== 'string') {
+    return undefined;
+  }
+  return { email: obj.email, password: obj.password, submit: obj.submit };
+}
+
 function parseUser(raw: RawUser, index: number): UserConfig {
   if (typeof raw.name !== 'string' || raw.name.length === 0) {
     throw new ProjectConfigError(
@@ -123,13 +171,18 @@ function parseUser(raw: RawUser, index: number): UserConfig {
       `users[${String(index)}].auth_flow`,
     );
   }
-  return {
+  const user: UserConfig = {
     name: raw.name,
     email: resolveOptionalString(raw.email),
     password: resolveOptionalString(raw.password),
     role: typeof raw.role === 'string' ? raw.role : undefined,
     authFlow: raw.auth_flow as AuthFlow,
   };
+  const loginSelectors = parseLoginSelectors(raw.login_selectors);
+  if (loginSelectors) {
+    user.loginSelectors = loginSelectors;
+  }
+  return user;
 }
 
 function parseCombination(
@@ -164,6 +217,45 @@ function parseCombination(
   };
 }
 
+const VALID_AI_PROVIDERS: readonly AiProvider[] = ['openai', 'anthropic'];
+
+function parseAiModelConfig(
+  raw: unknown,
+  field: string,
+  fallback: AiModelConfig,
+): AiModelConfig {
+  if (!raw || typeof raw !== 'object') {
+    return fallback;
+  }
+  const obj = raw as RawAiModelConfig;
+  const provider = typeof obj.provider === 'string' && VALID_AI_PROVIDERS.includes(obj.provider as AiProvider)
+    ? (obj.provider as AiProvider)
+    : fallback.provider;
+  const model = typeof obj.model === 'string' && obj.model.length > 0
+    ? obj.model
+    : fallback.model;
+
+  if (typeof obj.provider === 'string' && !VALID_AI_PROVIDERS.includes(obj.provider as AiProvider)) {
+    throw new ProjectConfigError(
+      `ai.${field}.provider must be one of: ${VALID_AI_PROVIDERS.join(', ')}. Got: "${obj.provider}"`,
+      `ai.${field}.provider`,
+    );
+  }
+
+  return { provider, model };
+}
+
+function parseAiConfig(raw: unknown): AiConfig {
+  if (!raw || typeof raw !== 'object') {
+    return DEFAULT_AI_CONFIG;
+  }
+  const obj = raw as RawAiConfig;
+  return {
+    exploration: parseAiModelConfig(obj.exploration, 'exploration', DEFAULT_AI_CONFIG.exploration),
+    generation: parseAiModelConfig(obj.generation, 'generation', DEFAULT_AI_CONFIG.generation),
+  };
+}
+
 // ── Main ───────────────────────────────────────────────────────────────
 
 export async function loadProjectConfig(filePath: string): Promise<ProjectConfig> {
@@ -195,6 +287,8 @@ export async function loadProjectConfig(filePath: string): Promise<ProjectConfig
     );
   }
 
+  const ai = parseAiConfig(config.ai);
+
   const rawEnvironments = Array.isArray(config.environments) ? config.environments : [];
   const rawUsers = Array.isArray(config.users) ? config.users : [];
   const rawCombinations = Array.isArray(config.setup_combinations) ? config.setup_combinations : [];
@@ -215,6 +309,7 @@ export async function loadProjectConfig(filePath: string): Promise<ProjectConfig
 
   return {
     projectName,
+    ai,
     environments,
     users,
     setupCombinations,
