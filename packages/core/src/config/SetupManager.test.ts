@@ -6,6 +6,7 @@ vi.mock('node:fs/promises', () => ({
 
 import { readFile } from 'node:fs/promises';
 
+import { DEFAULT_AI_CONFIG } from './ProjectConfig.js';
 import type { ProjectConfig } from './ProjectConfig.js';
 import { SetupManager } from './SetupManager.js';
 
@@ -14,6 +15,7 @@ const mockReadFile = readFile as unknown as ReturnType<typeof vi.fn>;
 function createConfig(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
   return {
     projectName: 'test-app',
+    ai: DEFAULT_AI_CONFIG,
     environments: [
       { name: 'staging', baseUrl: 'https://staging.example.com' },
       { name: 'production', baseUrl: 'https://prod.example.com', cookies: '/path/to/cookies.json' },

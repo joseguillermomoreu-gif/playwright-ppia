@@ -12,7 +12,7 @@ import { SetupAgent } from '../../agents/SetupAgent.js';
 import { ActionExecutor } from '../../browser/ActionExecutor.js';
 import { BrowserManager } from '../../browser/BrowserManager.js';
 import { HtmlExtractor } from '../../browser/HtmlExtractor.js';
-import { loadProjectConfig } from '../../config/ProjectConfig.js';
+import { DEFAULT_AI_CONFIG, loadProjectConfig } from '../../config/ProjectConfig.js';
 import { SetupManager } from '../../config/SetupManager.js';
 import { createAgentContext } from '../../domain/AgentContext.js';
 import { TestExecutor } from '../../executor/TestExecutor.js';
@@ -47,10 +47,19 @@ async function generateAction(description: string, options: GenerateOptions): Pr
   const outputDir = resolve(process.cwd(), 'output');
   const configPath = resolve(process.cwd(), 'ppia.yaml');
 
+  // ── Load AI config from ppia.yaml (fallback to defaults) ──────────
+  let modelFast = DEFAULT_AI_CONFIG.exploration.model;
+  let modelStrong = DEFAULT_AI_CONFIG.generation.model;
+  try {
+    const config = await loadProjectConfig(configPath);
+    modelFast = config.ai.exploration.model;
+    modelStrong = config.ai.generation.model;
+  } catch {
+    // No config or invalid — use defaults
+  }
+
   const pythonServer = new PythonServerManager();
   const browser = new BrowserManager({ headless: false });
-  const modelFast = 'gpt-4o-mini';
-  const modelStrong = 'gpt-4o';
   let totalTokens = 0;
   let totalCost = 0;
 
