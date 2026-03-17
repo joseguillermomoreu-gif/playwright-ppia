@@ -75,8 +75,12 @@ async function generateAction(description: string, options: GenerateOptions): Pr
     // ── 1b. Startup check (cost estimate) ─────────────────────────────
     const startupChecker = new StartupChecker(process.cwd(), aiClient);
     const startupResult = await startupChecker.run(10);
-    // display and markRan are added in T24.5
-    void startupResult;
+    ui.renderStartupPanel(startupResult);
+    if (!startupResult.skipped) {
+      const { LastStartupStore } = await import('../LastStartupStore.js');
+      const lastStartupStore = new LastStartupStore(process.cwd());
+      await lastStartupStore.markRan();
+    }
 
     // ── 2. Session 0: parse input ─────────────────────────────────────
     const prepared = await aiClient.prepareInput({ rawInput: description });
