@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     default_model: str = "gpt-4o"
+    model_fast: str = "gpt-4o-mini"
+    model_strong: str = "gpt-4o"
     port: int = 8765
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
