@@ -30,6 +30,12 @@ npx ppia generate "Validate user login with valid credentials"
 
 The Python service is bundled inside the npm package and managed transparently. You never need to install or configure Python manually.
 
+## Documentation
+
+Full CLI reference, configuration guide, and API details: [packages/core/README.md](packages/core/README.md)
+
+Want to contribute? See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 MIT
