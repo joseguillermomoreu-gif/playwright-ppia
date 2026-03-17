@@ -16,6 +16,8 @@ npm install --save-dev playwright-ppia
 npx ppia generate "Validate user login with valid credentials"
 ```
 
+For a complete working example, see [examples/basic-project/](examples/basic-project/).
+
 ## How It Works
 
 1. **You describe** what to test in natural language

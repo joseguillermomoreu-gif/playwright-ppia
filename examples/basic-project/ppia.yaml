@@ -1,0 +1,62 @@
+# PPIA Configuration for Basic Example
+# This file defines environments, users, authentication flows, and AI service settings
+
+project:
+  # Project name (required) — used in logs and test naming
+  name: basic-example
+  # Optional description
+  description: Basic example demonstrating PPIA test generation
+
+# AI Service configuration (all optional, defaults shown below)
+ai_service:
+  # Port where the Python AI Service listens
+  port: 8765
+
+  # Fast model for exploration phase (many quick calls)
+  # Default: gpt-4o-mini
+  # Cost: ~$0.15/$0.60 per 1M tokens
+  model_fast: gpt-4o-mini
+
+  # Strong model for generation and artifacts (fewer, critical calls)
+  # Default: gpt-4o
+  # Cost: ~$2.50/$10.00 per 1M tokens
+  model_strong: gpt-4o
+
+  # Maximum number of exploration iterations (default: 25)
+  # Increase if PPIA stops early; decrease if running too long
+  max_iterations: 25
+
+  # Maximum number of generation retries on test failure (default: 3)
+  # Each retry gets a fresh session with the failure report as context
+  max_generation_attempts: 3
+
+# Environments (optional) — URLs where your application runs
+environments:
+  staging:
+    # Base URL for this environment (required if you use this environment)
+    base_url: "https://example.com"
+    # Optional: Path to JSON file with cookies to inject before testing
+    # cookies: .auth/staging_cookies.json
+
+# Users (optional) — credentials and roles for authentication
+users:
+  admin:
+    # Email used for login forms
+    email: admin@example.com
+    # Password reference using environment variable ${VAR_NAME}
+    # Set ADMIN_PASSWORD before running ppia
+    password: "${ADMIN_PASSWORD}"
+    # User role (optional, for documentation)
+    role: administrator
+    # Authentication flow (login_form or cookie_injection)
+    auth_flow: login_form
+
+# Output configuration (optional)
+output:
+  # Directory where generated tests and artifacts are saved (default: ./output)
+  dir: ./output
+
+  # Where to store artifacts (integrated or docs)
+  # integrated: artifacts (POM.md, Gherkin, Cucumber) live next to the test
+  # docs: artifacts go to docs/{test_name}/ separately
+  artifacts: integrated

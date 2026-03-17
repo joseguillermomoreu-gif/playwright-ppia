@@ -1,0 +1,11 @@
+{
+  "name": "ppia-basic-example",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "ppia": "ppia"
+  },
+  "devDependencies": {
+    "playwright-ppia": "^0.1.0"
+  }
+}
