@@ -1,5 +1,7 @@
 import chalk from 'chalk';
 
+import type { StartupResult } from '../StartupChecker.js';
+
 // ── Basic UI ──────────────────────────────────────────────────────────
 
 export function header(title: string): void {
@@ -35,6 +37,51 @@ export function listItem(label: string, value: string): void {
 
 export function blank(): void {
   console.log();
+}
+
+// ── Startup panel ────────────────────────────────────────────────────
+
+function formatPricePerMTok(usdPerToken: number): string {
+  const perMTok = usdPerToken * 1_000_000;
+  return `$${perMTok.toFixed(2)}`;
+}
+
+function keyStatus(envVar: string): string {
+  return process.env[envVar]
+    ? chalk.green('configured')
+    : chalk.red('not set');
+}
+
+export function renderStartupPanel(result: StartupResult): void {
+  if (result.skipped) {
+    return;
+  }
+
+  const cachedSuffix = result.pricesCached ? chalk.dim(' (cached)') : '';
+
+  header(`playwright-ppia v${result.version}`);
+
+  subheader('API Keys');
+  listItem('OpenAI API key', keyStatus('OPENAI_API_KEY'));
+  listItem('Anthropic key', keyStatus('ANTHROPIC_API_KEY'));
+
+  subheader(`Prices${cachedSuffix}`);
+  for (const price of result.prices) {
+    const inputStr = formatPricePerMTok(price.inputUsdPerToken);
+    const outputStr = formatPricePerMTok(price.outputUsdPerToken);
+    success(`${price.modelId.padEnd(20)} ${inputStr} / ${outputStr} MTok`);
+  }
+  if (result.prices.length === 0) {
+    warn('prices unavailable');
+  }
+
+  subheader('Cost estimate');
+  const est = result.costEstimate;
+  listItem('Exploration', `${result.modelFast.padEnd(20)} ${formatCost(est.exploration)}`);
+  listItem('Generation', `${result.modelStrong.padEnd(20)} ${formatCost(est.generation)}`);
+  separator();
+  listItem('Total estimated', `${''.padEnd(20)} ${formatCost(est.total)}`);
+  blank();
 }
 
 // ── Cost estimation ───────────────────────────────────────────────────

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import FastAPI, HTTPException
 
 from src.application.dto.explore import (
@@ -13,18 +15,30 @@ from src.application.dto.generate import (
     GenerateTestResponse,
 )
 from src.application.dto.prepare_input import PrepareInputRequest, PrepareInputResponse
+from src.application.dto.startup import StartupInfoResponse
 from src.application.use_cases.explore.explore_use_case import ExploreUseCase
 from src.application.use_cases.generate.generate_artifacts_use_case import GenerateArtifactsUseCase
 from src.application.use_cases.generate.generate_test_use_case import GenerateTestUseCase
 from src.application.use_cases.prepare_input.prepare_input_use_case import PrepareInputUseCase
 from src.infrastructure.config.dependency_injection import get_container
+from src.infrastructure.config.settings import get_settings
 
 app = FastAPI(title="PPIA AI Service", version="0.1.0")
 
 
 @app.get("/ping")
 async def ping() -> dict[str, str]:
-    return {"status": "ok", "version": "0.1.0"}
+    return {"status": "ok", "version": app.version}
+
+
+@app.get("/startup-info")
+async def startup_info() -> StartupInfoResponse:
+    settings = get_settings()
+    return StartupInfoResponse(
+        version=app.version,
+        model_fast=settings.model_fast,
+        model_strong=settings.model_strong,
+    )
 
 
 @app.post("/prepare-input")

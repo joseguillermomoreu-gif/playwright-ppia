@@ -17,6 +17,7 @@ import { SetupManager } from '../../config/SetupManager.js';
 import { createAgentContext } from '../../domain/AgentContext.js';
 import { TestExecutor } from '../../executor/TestExecutor.js';
 import { SuiteManager } from '../../suite/SuiteManager.js';
+import { StartupChecker } from '../StartupChecker.js';
 import * as ui from '../ui/ProgressDisplay.js';
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -70,6 +71,16 @@ async function generateAction(description: string, options: GenerateOptions): Pr
     await pythonServer.start();
     const aiClient = new AiServiceClient(pythonServer.baseUrl);
     ui.success('AI Service ready');
+
+    // ── 1b. Startup check (cost estimate) ─────────────────────────────
+    const startupChecker = new StartupChecker(process.cwd(), aiClient);
+    const startupResult = await startupChecker.run(10);
+    ui.renderStartupPanel(startupResult);
+    if (!startupResult.skipped) {
+      const { LastStartupStore } = await import('../LastStartupStore.js');
+      const lastStartupStore = new LastStartupStore(process.cwd());
+      await lastStartupStore.markRan();
+    }
 
     // ── 2. Session 0: parse input ─────────────────────────────────────
     const prepared = await aiClient.prepareInput({ rawInput: description });

@@ -2,6 +2,7 @@ from src.domain.repository.llm_service import LlmService
 from src.infrastructure.ai.anthropic.claude_llm_service import ClaudeLlmService
 from src.infrastructure.ai.openai.openai_llm_service import OpenAiLlmService
 from src.infrastructure.config.settings import Settings, get_settings
+from src.infrastructure.pricing.pricing_store import PricingStore
 from src.infrastructure.session.session_store import SessionStore
 
 
@@ -10,6 +11,7 @@ class Container:
         self.settings = settings or get_settings()
         self._llm_service: LlmService | None = None
         self._session_store: SessionStore | None = None
+        self._pricing_stores: dict[str, PricingStore] = {}
 
     def get_session_store(self) -> SessionStore:
         if self._session_store is None:
@@ -23,6 +25,11 @@ class Container:
             return self._llm_service
         override_settings = self.settings.model_copy(update={"default_model": model_override})
         return _create_llm_service(override_settings)
+
+    def get_pricing_store(self, project_root: str) -> PricingStore:
+        if project_root not in self._pricing_stores:
+            self._pricing_stores[project_root] = PricingStore(project_root)
+        return self._pricing_stores[project_root]
 
 
 def _create_llm_service(settings: Settings) -> LlmService:
