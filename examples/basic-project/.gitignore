@@ -1,0 +1,4 @@
+node_modules/
+.ppia/
+output/
+.env
