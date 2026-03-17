@@ -24,6 +24,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+          registry-url: https://registry.npmjs.org
 
       - name: Configure git
         run: |
@@ -61,7 +62,12 @@ jobs:
           git tag "${{ steps.version.outputs.new_version }}"
           git push origin master --follow-tags
 
-      - name: Publish npm (placeholder)
-        run: |
-          echo "npm publish will be enabled in T22"
-          echo "Version: ${{ steps.version.outputs.new_version }}"
+      - name: Build
+        working-directory: packages/core
+        run: pnpm build
+
+      - name: Publish to npm
+        working-directory: packages/core
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
