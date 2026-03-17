@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/joseguillermomoreu-gif/playwright-ppia/discussions
+    about: Ask questions and discuss ideas
