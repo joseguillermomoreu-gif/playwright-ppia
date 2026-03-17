@@ -10,10 +10,10 @@ const originalError = console.error;
 
 beforeEach(() => {
   consoleOutput = [];
-  console.log = (...args: unknown[]) => {
+  console.log = (...args: unknown[]): void => {
     consoleOutput.push(args.map(String).join(' '));
   };
-  console.error = (...args: unknown[]) => {
+  console.error = (...args: unknown[]): void => {
     consoleOutput.push(args.map(String).join(' '));
   };
 });

@@ -49,13 +49,14 @@ describe('StartupChecker', () => {
 
   it('skips startup when hasRanToday returns true', async () => {
     mockHasRanToday.mockResolvedValueOnce(true);
-    const mockClient = buildMockClient();
+    const waitForReady = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    const mockClient = buildMockClient({ waitForReady });
 
     const checker = new StartupChecker('/fake', mockClient);
     const result = await checker.run(10);
 
     expect(result.skipped).toBe(true);
-    expect(mockClient.waitForReady).not.toHaveBeenCalled();
+    expect(waitForReady).not.toHaveBeenCalled();
   });
 
   it('does not call fetchPrices when skipped', async () => {
