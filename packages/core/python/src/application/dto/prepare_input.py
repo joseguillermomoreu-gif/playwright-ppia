@@ -14,3 +14,4 @@ class PrepareInputResponse(BaseModel):
     test_name: str
     parameters: dict[str, str]
     tokens_used: int
+    estimated_cost: float = 0.0
