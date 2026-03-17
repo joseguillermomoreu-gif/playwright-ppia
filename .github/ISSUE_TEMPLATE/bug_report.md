@@ -32,17 +32,18 @@ labels: ["bug"]
 - Python version:
 - Operating system:
 - Playwright version:
+-->
 
 > Do not include API keys, passwords, or any credentials.
 > Redact any sensitive values before pasting.
--->
 
 ## Error Output / Logs
 
 <!--
 Paste the full stack trace or terminal output here.
-Redact any sensitive values before pasting.
 -->
+
+> Redact any sensitive values before pasting.
 
 ## Additional Context
 
