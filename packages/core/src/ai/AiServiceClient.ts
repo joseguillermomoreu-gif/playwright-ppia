@@ -11,6 +11,7 @@ import type {
   PingResponse,
   PrepareInputRequest,
   PrepareInputResponse,
+  StartupInfoResponse,
 } from './AiServiceTypes.js';
 
 /**
@@ -84,6 +85,37 @@ export class AiServiceClient {
     return this.post<GenerateArtifactsResponse>(
       `/session/${sessionId}/generate-artifacts`,
       request,
+    );
+  }
+
+  async getStartupInfo(): Promise<StartupInfoResponse> {
+    return this.get<StartupInfoResponse>('/startup-info');
+  }
+
+  async waitForReady(timeoutMs: number): Promise<void> {
+    const maxAttempts = 10;
+    const interval = 300;
+    const deadline = Date.now() + timeoutMs;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (Date.now() > deadline) {
+        break;
+      }
+      try {
+        await this.ping();
+        return;
+      } catch {
+        // Not ready yet
+      }
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, interval);
+      });
+    }
+
+    throw new AiServiceError(
+      `AI Service did not become ready within ${String(timeoutMs)}ms`,
+      undefined,
+      '/ping',
     );
   }
 

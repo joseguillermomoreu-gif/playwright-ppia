@@ -71,3 +71,11 @@ export interface GenerateArtifactsResponse {
   cucumberMd: string;
   tokensUsed: number;
 }
+
+// --- Startup Info ---
+
+export interface StartupInfoResponse {
+  version: string;
+  modelFast: string;
+  modelStrong: string;
+}
