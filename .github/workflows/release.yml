@@ -4,13 +4,12 @@ on:
   push:
     branches: [master]
 
-permissions:
-  contents: write
-
 jobs:
   release:
     name: Bump version & tag
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
